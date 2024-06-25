@@ -1,0 +1,74 @@
+name: Python application
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['windows-latest'] #'ubuntu-latest' ] #, 'macos-latest']
+    env:
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+      TENANT_ID: ${{ secrets.TENANT_ID }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.7
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    # - name: Create runtime hook # PyInstaller assumes the env are stored on the PC instead which is wrong
+    #   run: |
+    #     echo "import os" > runtime_hook.py
+    #     echo "os.environ['CLIENT_ID'] = '${{ secrets.CLIENT_ID }}'" >> runtime_hook.py
+    #     echo "os.environ['CLIENT_SECRET'] = '${{ secrets.CLIENT_SECRET }}'" >> runtime_hook.py
+    #     echo "os.environ['TENANT_ID'] = '${{ secrets.TENANT_ID }}'" >> runtime_hook.py
+    #     echo "os.environ['AZURE_DEFAULTPASS'] = '${{ vars.AZURE_DEFAULTPASS }}'" >> runtime_hook.py
+    #     echo "os.environ['WISENET_API_KEY'] = '${{ secrets.WISENET_API_KEY }}'" >> runtime_hook.py
+
+    - name: Create standalone executable # we modify with the values
+      run: pyinstaller --onefile --runtime-hook runtime_hook.py --hidden-import="openpyxl.cell._writer" main.py
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        path: dist/*
+
+  # release:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v2
+
+  #   - name: Download Artifact
+  #     uses: actions/download-artifact@v2
+  #     with:
+  #       path: dist/
+
+  #   - name: Create Release
+  #     id: create_release
+  #     uses: actions/create-release@v1
+  #     with:
+  #       tag_name: ${{ github.ref }}
+  #       release_name: Release ${{ github.ref }}
+  #       draft: false
+  #       prerelease: false
+
+    # Uncomment the below section once you have set up the RELEASE_TOKEN and determined the path for your artifact
+    # - name: Upload Release Asset
+    #   uses: actions/upload-release-asset@v1
+    #   with:
+    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #     asset_path: ./dist/artifact.zip
+    #     token:  ${{ secrets.RELEASE_TOKEN }}
+    #     asset_name: your-artifact.zip
+    #     asset_content_type: application/zip
