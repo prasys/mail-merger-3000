@@ -35,7 +35,7 @@ jobs:
     #     echo "os.environ['WISENET_API_KEY'] = '${{ secrets.WISENET_API_KEY }}'" >> runtime_hook.py
 
     - name: Create standalone executable # we modify with the values
-      run: pyinstaller --onefile --runtime-hook runtime_hook.py --hidden-import="openpyxl.cell._writer" main.py
+      run: pyinstaller --onefile --hidden-import="openpyxl.cell._writer" main.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
